@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bookmark Manager</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --surface: #1e293b;
+    --surface-hover: #263449;
+    --border: #334155;
+    --text: #e2e8f0;
+    --text-dim: #94a3b8;
+    --accent: #6366f1;
+    --accent-hover: #818cf8;
+    --danger: #ef4444;
+    --danger-hover: #f87171;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #1e293b 0%, #0f172a 60%);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    padding: 48px 16px;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin: 0 0 8px;
+    letter-spacing: -0.02em;
+  }
+
+  .subtitle {
+    color: var(--text-dim);
+    margin: 0 0 32px;
+    font-size: 0.95rem;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    margin-bottom: 32px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  label {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-weight: 600;
+  }
+
+  input[type="text"],
+  input[type="url"] {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: var(--text);
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+
+  input[type="text"]:focus,
+  input[type="url"]:focus {
+    border-color: var(--accent);
+  }
+
+  button[type="submit"] {
+    margin-top: 4px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 11px 16px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+
+  button[type="submit"]:hover {
+    background: var(--accent-hover);
+  }
+
+  .error {
+    color: var(--danger);
+    font-size: 0.85rem;
+    min-height: 1em;
+  }
+
+  .search-field {
+    margin-bottom: 20px;
+  }
+
+  .list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 12px;
+  }
+
+  .list-header h2 {
+    font-size: 1.1rem;
+    margin: 0;
+  }
+
+  .count {
+    color: var(--text-dim);
+    font-size: 0.85rem;
+  }
+
+  ul#bookmark-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .bookmark {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    transition: background 0.15s ease;
+  }
+
+  .bookmark:hover {
+    background: var(--surface-hover);
+  }
+
+  .favicon {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+
+  .bookmark-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .bookmark-title {
+    display: block;
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .bookmark-title:hover {
+    color: var(--accent-hover);
+  }
+
+  .bookmark-url {
+    display: block;
+    color: var(--text-dim);
+    font-size: 0.8rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .delete-btn {
+    flex-shrink: 0;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    border-radius: 8px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    transition: all 0.15s ease;
+  }
+
+  .delete-btn:hover {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: white;
+  }
+
+  .empty-state {
+    text-align: center;
+    color: var(--text-dim);
+    padding: 40px 20px;
+    border: 1px dashed var(--border);
+    border-radius: 12px;
+    font-size: 0.9rem;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔖 Bookmark Manager</h1>
+    <p class="subtitle">Saved locally in your browser — no account, no server.</p>
+
+    <form id="bookmark-form">
+      <div class="field">
+        <label for="title-input">Title</label>
+        <input type="text" id="title-input" placeholder="e.g. Anthropic" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="url-input">URL</label>
+        <input type="url" id="url-input" placeholder="e.g. https://anthropic.com" autocomplete="off">
+      </div>
+      <div class="error" id="form-error"></div>
+      <button type="submit">Add Bookmark</button>
+    </form>
+
+    <div class="field search-field">
+      <input type="text" id="search-input" placeholder="Search by title…" autocomplete="off">
+    </div>
+
+    <div class="list-header">
+      <h2>Your Bookmarks</h2>
+      <span class="count" id="bookmark-count"></span>
+    </div>
+
+    <ul id="bookmark-list"></ul>
+    <div class="empty-state" id="empty-state" hidden></div>
+  </div>
+
+<script>
+  const STORAGE_KEY = "bookmarks";
+
+  const form = document.getElementById("bookmark-form");
+  const titleInput = document.getElementById("title-input");
+  const urlInput = document.getElementById("url-input");
+  const formError = document.getElementById("form-error");
+  const list = document.getElementById("bookmark-list");
+  const emptyState = document.getElementById("empty-state");
+  const countLabel = document.getElementById("bookmark-count");
+  const searchInput = document.getElementById("search-input");
+
+  function loadBookmarks() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function saveBookmarks(bookmarks) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(bookmarks));
+  }
+
+  function normalizeUrl(value) {
+    return /^https?:\/\//i.test(value) ? value : `https://${value}`;
+  }
+
+  function faviconFor(url) {
+    try {
+      const { hostname } = new URL(url);
+      return `https://www.google.com/s2/favicons?domain=${hostname}&sz=32`;
+    } catch {
+      return "";
+    }
+  }
+
+  function render() {
+    const bookmarks = loadBookmarks();
+    const query = searchInput.value.trim().toLowerCase();
+    const filtered = query
+      ? bookmarks.filter((b) => b.title.toLowerCase().includes(query))
+      : bookmarks;
+    list.innerHTML = "";
+
+    emptyState.hidden = filtered.length !== 0;
+    emptyState.textContent = bookmarks.length === 0
+      ? "No bookmarks yet. Add your first one above."
+      : "No bookmarks match your search.";
+    countLabel.textContent = bookmarks.length
+      ? `${filtered.length} of ${bookmarks.length} shown`
+      : "";
+
+    for (const bookmark of filtered) {
+      const li = document.createElement("li");
+      li.className = "bookmark";
+
+      const favicon = document.createElement("img");
+      favicon.className = "favicon";
+      favicon.src = faviconFor(bookmark.url);
+      favicon.alt = "";
+
+      const info = document.createElement("div");
+      info.className = "bookmark-info";
+
+      const titleLink = document.createElement("a");
+      titleLink.className = "bookmark-title";
+      titleLink.href = bookmark.url;
+      titleLink.target = "_blank";
+      titleLink.rel = "noopener noreferrer";
+      titleLink.textContent = bookmark.title;
+
+      const urlLabel = document.createElement("span");
+      urlLabel.className = "bookmark-url";
+      urlLabel.textContent = bookmark.url;
+
+      info.append(titleLink, urlLabel);
+
+      const deleteBtn = document.createElement("button");
+      deleteBtn.className = "delete-btn";
+      deleteBtn.type = "button";
+      deleteBtn.title = "Delete bookmark";
+      deleteBtn.textContent = "✕";
+      deleteBtn.addEventListener("click", () => deleteBookmark(bookmark.id));
+
+      li.append(favicon, info, deleteBtn);
+      list.appendChild(li);
+    }
+  }
+
+  function addBookmark(title, url) {
+    const bookmarks = loadBookmarks();
+    bookmarks.unshift({
+      id: crypto.randomUUID(),
+      title,
+      url,
+    });
+    saveBookmarks(bookmarks);
+    render();
+  }
+
+  function deleteBookmark(id) {
+    const bookmarks = loadBookmarks().filter((b) => b.id !== id);
+    saveBookmarks(bookmarks);
+    render();
+  }
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    formError.textContent = "";
+
+    const title = titleInput.value.trim();
+    const rawUrl = urlInput.value.trim();
+
+    if (!title || !rawUrl) {
+      formError.textContent = "Please fill in both title and URL.";
+      return;
+    }
+
+    const url = normalizeUrl(rawUrl);
+    try {
+      new URL(url);
+    } catch {
+      formError.textContent = "Please enter a valid URL.";
+      return;
+    }
+
+    addBookmark(title, url);
+    form.reset();
+    titleInput.focus();
+  });
+
+  searchInput.addEventListener("input", render);
+
+  render();
+</script>
+</body>
+</html>
